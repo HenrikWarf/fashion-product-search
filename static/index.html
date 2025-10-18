@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athena - AI Fashion Search</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Progress Indicator -->
+        <div id="progressIndicator" class="progress-indicator hidden">
+            <div class="progress-indicator-step" id="step1" data-step="1">
+                <div class="progress-indicator-number">1</div>
+                <div class="progress-indicator-label">Search & Design</div>
+            </div>
+            <div class="progress-indicator-line"></div>
+            <div class="progress-indicator-step" id="step2" data-step="2">
+                <div class="progress-indicator-number">2</div>
+                <div class="progress-indicator-label">Refine Concept</div>
+            </div>
+            <div class="progress-indicator-line"></div>
+            <div class="progress-indicator-step" id="step3" data-step="3">
+                <div class="progress-indicator-number">3</div>
+                <div class="progress-indicator-label">Browse Products</div>
+            </div>
+            <div class="progress-indicator-line"></div>
+            <div class="progress-indicator-step" id="step4" data-step="4">
+                <div class="progress-indicator-number">4</div>
+                <div class="progress-indicator-label">Create Your Look</div>
+            </div>
+        </div>
+
+        <!-- Initial Search View -->
+        <div id="searchView" class="search-view">
+            <h1 class="title">Athena</h1>
+            <p class="subtitle">Describe your style, visualize it, find matching products</p>
+
+            <div class="search-row">
+                <!-- Pre-built Concepts Button -->
+                <button id="conceptsToggleButton" class="toggle-button" title="Browse Style Concepts">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </button>
+
+                <!-- Search Container -->
+                <div class="search-container">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        class="search-input"
+                        placeholder="Describe what you're looking for... (e.g., 'formal dress for summer wedding, pastel, under $200')"
+                        autocomplete="off"
+                    />
+                    <button id="searchButton" class="search-button">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 17A8 8 0 1 0 9 1a8 8 0 0 0 0 16zM19 19l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Upload Image Button -->
+                <button id="uploadToggleButton" class="toggle-button" title="Upload Your Own Style">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 16V8M12 8L9 11M12 8L15 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M20 16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <rect x="7" y="4" width="10" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Toggleable Content Sections -->
+            <div class="toggle-content-container">
+                <!-- Style Concepts Section (hidden by default) -->
+                <div class="toggle-content hidden" id="conceptsContent">
+                    <div id="styleConceptsGrid" class="style-concepts-grid">
+                        <!-- Concept cards will be dynamically inserted here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Upload Section (hidden by default) -->
+                <div class="toggle-content hidden" id="uploadContent">
+                    <div class="upload-style-section">
+                        <p class="upload-description">Upload an image of a style you love, and we'll find matching products for you</p>
+
+                        <div class="upload-dropzone" id="uploadDropzone">
+                            <svg class="upload-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M24 32V16M24 16L18 22M24 16L30 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M40 32V38C40 39.1046 39.1046 40 38 40H10C8.89543 40 8 39.1046 8 38V32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <rect x="14" y="8" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            <p class="upload-prompt">
+                                <strong>Click to upload</strong> or drag and drop
+                            </p>
+                            <p class="upload-hint">PNG, JPG, or WEBP (max 10MB)</p>
+                            <input type="file" id="styleImageInput" accept="image/png,image/jpeg,image/jpg,image/webp" hidden />
+                        </div>
+
+                        <div class="upload-preview hidden" id="uploadPreview">
+                            <img id="uploadPreviewImage" class="upload-preview-image" alt="Uploaded style" />
+                            <button class="upload-remove-button" id="uploadRemoveButton">&times;</button>
+                        </div>
+
+                        <div class="upload-description-input hidden" id="uploadDescriptionSection">
+                            <label for="uploadDescriptionInput" class="upload-label">Add optional description (helps refine the search)</label>
+                            <textarea
+                                id="uploadDescriptionInput"
+                                class="upload-textarea"
+                                placeholder="E.g., 'I love the casual vibe and earth tones in this outfit'"
+                                rows="2"
+                            ></textarea>
+                        </div>
+
+                        <button id="searchByImageButton" class="search-by-image-button hidden">Search with This Style</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading View -->
+        <div id="loadingView" class="loading-view hidden">
+            <div class="loading-backdrop"></div>
+            <div class="loading-card">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <div class="progress-steps" id="progressSteps">
+                        <!-- Progress steps will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Workbench View -->
+        <div id="workbenchView" class="workbench-view hidden">
+            <button id="backButton" class="back-button">← New Search</button>
+
+            <div class="workbench-container">
+                <div class="image-section">
+                    <h2>Your Style Concept</h2>
+                    <div class="generated-image-container">
+                        <img id="generatedImage" class="generated-image" alt="Generated fashion concept" />
+                    </div>
+                    <p id="imageDescription" class="image-description"></p>
+
+                    <!-- Concept History Carousel -->
+                    <div class="concept-history" id="conceptHistory">
+                        <div class="concept-history-header">
+                            <span class="concept-history-label">Concept History</span>
+                            <span class="concept-history-count" id="historyCount">1 of 1</span>
+                        </div>
+                        <div class="concept-history-carousel">
+                            <button class="carousel-nav-button" id="historyPrev" disabled>
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <div class="carousel-track" id="historyTrack">
+                                <!-- Thumbnails inserted here dynamically -->
+                            </div>
+                            <button class="carousel-nav-button" id="historyNext" disabled>
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Find Products Button -->
+                    <button id="findProductsButton" class="find-products-button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Find Matching Products</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 4L13 10L7 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="refinement-section">
+                    <h3>Refine Your Vision</h3>
+                    <div class="refinement-input-group">
+                        <textarea
+                            id="refinementInput"
+                            class="refinement-input"
+                            placeholder="Describe how you'd like to adjust this design... (e.g., 'make it sage green with flutter sleeves')"
+                            rows="3"
+                        ></textarea>
+                        <button id="refineButton" class="refine-button">Refine Design</button>
+                    </div>
+
+                    <!-- Style Suggestions -->
+                    <div class="style-suggestions" id="styleSuggestions">
+                        <div class="suggestions-header">
+                            <span class="suggestions-label">Try These Variations:</span>
+                            <div class="suggestions-loading hidden" id="suggestionsLoading">
+                                <div class="suggestions-spinner"></div>
+                                <span>Analyzing...</span>
+                            </div>
+                        </div>
+                        <div class="suggestions-chips" id="suggestionsChips">
+                            <!-- Suggestion chips inserted here dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products View -->
+        <div id="productsView" class="products-view hidden">
+            <button id="backToWorkbenchButton" class="back-button">← Back to Design</button>
+
+            <!-- Help Banner for Look Creation -->
+            <div class="look-creation-hint">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/>
+                    <path d="M10 6v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Select 2-3 products by clicking the checkboxes to create a styled look</span>
+            </div>
+
+            <div class="products-concept-preview">
+                <div class="products-concept-image-container">
+                    <img id="productsConceptImage" class="products-concept-image" alt="Your style concept" />
+                </div>
+                <div class="products-concept-info">
+                    <span class="products-concept-label">Your Style Concept</span>
+                    <p id="productsConceptDescription" class="products-concept-description"></p>
+                </div>
+            </div>
+
+            <div class="products-header">
+                <h2>Matching Products</h2>
+                <p id="productsDescription" class="products-description"></p>
+            </div>
+
+            <div id="productsGrid" class="products-grid">
+                <!-- Products will be dynamically inserted here -->
+            </div>
+
+            <!-- Selection Bar (shows when products are selected) -->
+            <div id="selectionBar" class="selection-bar hidden">
+                <div class="selection-bar-content">
+                    <span id="selectionCount" class="selection-count">0 items selected</span>
+                    <div class="selection-bar-actions">
+                        <button id="clearSelectionButton" class="selection-bar-button secondary">Clear</button>
+                        <button id="createLookButton" class="selection-bar-button primary">Create Look</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Detail Modal -->
+        <div id="productModal" class="modal hidden">
+            <div class="modal-backdrop" id="modalBackdrop"></div>
+            <div class="modal-content">
+                <button class="modal-close" id="modalClose">&times;</button>
+                <div class="modal-body">
+                    <div class="modal-image-section">
+                        <img id="modalImage" class="modal-product-image" alt="Product image" />
+                        <div class="modal-match-badge" id="modalMatchBadge"></div>
+                    </div>
+                    <div class="modal-info-section">
+                        <div class="modal-header-info">
+                            <h2 id="modalProductName" class="modal-product-name"></h2>
+                            <p id="modalBrand" class="modal-brand"></p>
+                        </div>
+                        <div class="modal-price-section">
+                            <span id="modalPrice" class="modal-price"></span>
+                            <span id="modalPriceOriginal" class="modal-price-original"></span>
+                        </div>
+                        <p id="modalDescription" class="modal-description"></p>
+                        <div class="modal-details-grid">
+                            <div class="modal-detail-item">
+                                <span class="modal-detail-label">Category</span>
+                                <span id="modalCategory" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item">
+                                <span class="modal-detail-label">Color</span>
+                                <span id="modalColor" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item">
+                                <span class="modal-detail-label">Fabric</span>
+                                <span id="modalFabric" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item">
+                                <span class="modal-detail-label">Fit</span>
+                                <span id="modalFit" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item">
+                                <span class="modal-detail-label">Pattern</span>
+                                <span id="modalPattern" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item">
+                                <span class="modal-detail-label">Season</span>
+                                <span id="modalSeason" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item" id="modalSleeveItem">
+                                <span class="modal-detail-label">Sleeve</span>
+                                <span id="modalSleeve" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item" id="modalNeckItem">
+                                <span class="modal-detail-label">Neck Style</span>
+                                <span id="modalNeck" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item" id="modalOccasionItem">
+                                <span class="modal-detail-label">Occasion</span>
+                                <span id="modalOccasion" class="modal-detail-value"></span>
+                            </div>
+                            <div class="modal-detail-item" id="modalStyleItem">
+                                <span class="modal-detail-label">Style</span>
+                                <span id="modalStyle" class="modal-detail-value"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Look Builder View (Step 4) -->
+        <div id="lookBuilderView" class="look-builder-view hidden">
+            <button id="backToProductsButton" class="back-button">← Back to Products</button>
+
+            <div class="look-builder-container">
+                <div class="look-builder-header">
+                    <h2>Your Styled Look</h2>
+                    <p id="lookDescription" class="look-description"></p>
+                </div>
+
+                <div class="look-image-section">
+                    <div class="look-image-container">
+                        <img id="lookImage" class="look-generated-image" alt="Your styled look" />
+                    </div>
+                </div>
+
+                <div class="look-products-section">
+                    <h3>Products in This Look</h3>
+                    <div id="lookProductsGrid" class="look-products-grid">
+                        <!-- Selected products will be displayed here -->
+                    </div>
+                </div>
+
+                <div class="look-actions">
+                    <button id="addToBasketButton" class="look-action-button primary">Add to Basket</button>
+                    <button id="tryDifferentCombinationButton" class="look-action-button secondary">Try Different Combination</button>
+                    <button id="startNewSearchButton" class="look-action-button secondary">Start New Search</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Basket Confirmation Modal -->
+        <div id="basketModal" class="modal hidden">
+            <div class="modal-backdrop" id="basketModalBackdrop"></div>
+            <div class="modal-content basket-modal-content">
+                <button class="modal-close" id="basketModalClose">&times;</button>
+                <div class="modal-body basket-modal-body">
+                    <div class="basket-modal-success">
+                        <svg class="basket-success-icon" width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="30" fill="currentColor" opacity="0.1"/>
+                            <path d="M20 32L28 40L44 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h2 class="basket-modal-title">Your Styled Look Added to Basket!</h2>
+                    </div>
+
+                    <p id="basketLookDescription" class="basket-look-description"></p>
+
+                    <div class="basket-products-grid" id="basketProductsGrid">
+                        <!-- Product thumbnails will be inserted here -->
+                    </div>
+
+                    <div class="basket-modal-actions">
+                        <button id="returnToConceptButton" class="basket-action-button secondary">Return to Concept</button>
+                        <button id="createNewLookButton" class="basket-action-button primary">Create New Look</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Concept Modal -->
+        <div id="conceptModal" class="modal hidden">
+            <div class="modal-backdrop" id="conceptModalBackdrop"></div>
+            <div class="modal-content concept-modal-content">
+                <button class="modal-close" id="conceptModalClose">&times;</button>
+                <div class="modal-body concept-modal-body">
+                    <div class="concept-modal-image-section">
+                        <div id="conceptModalImage" class="concept-modal-image"></div>
+                    </div>
+                    <div class="concept-modal-info-section">
+                        <h2 id="conceptModalTitle" class="concept-modal-title"></h2>
+                        <p id="conceptModalTagline" class="concept-modal-tagline"></p>
+                        <p id="conceptModalDescription" class="concept-modal-description"></p>
+                        <button id="selectConceptButton" class="select-concept-button">Start with This Concept</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

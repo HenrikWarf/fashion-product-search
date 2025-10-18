@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="32" fill="#2c2c2c"/>
+  
+  <!-- Stylized "A" for Athena in gold -->
+  <path d="M 32 18 L 42 46 L 38 46 L 36 40 L 28 40 L 26 46 L 22 46 L 32 18 Z M 29.5 36 L 34.5 36 L 32 27 L 29.5 36 Z" fill="#d4af37"/>
+  
+  <!-- Small sparkle accent -->
+  <circle cx="48" cy="20" r="2" fill="#d4af37" opacity="0.8"/>
+  <circle cx="16" cy="48" r="1.5" fill="#d4af37" opacity="0.6"/>
+</svg>
