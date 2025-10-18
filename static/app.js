@@ -78,6 +78,15 @@ function showView(viewName) {
     updateProgressIndicator(viewName);
 }
 
+// Loading Overlay Functions (for modal overlay on top of current view)
+function showLoadingOverlay() {
+    views.loading.classList.remove('hidden');
+}
+
+function hideLoadingOverlay() {
+    views.loading.classList.add('hidden');
+}
+
 // Progress Indicator Management
 function updateProgressIndicator(viewName) {
     const progressIndicator = document.getElementById('progressIndicator');
@@ -255,7 +264,7 @@ async function handleSearch() {
     // Initialize and show progress steps
     const steps = PROGRESS_STEPS.search;
     initializeProgressSteps(steps);
-    showView('loading');
+    showLoadingOverlay();
 
     try {
         let imageData = null;
@@ -340,13 +349,15 @@ async function handleSearch() {
         // Cache suggestions for this concept
         currentState.suggestionCache[0] = suggestions;
 
-        // Show workbench with everything ready
+        // Hide loading overlay and show workbench with everything ready
+        hideLoadingOverlay();
         showView('workbench');
         displayConceptWithHistory();
 
     } catch (error) {
         console.error('Search error:', error);
         alert('An error occurred while processing your search. Please try again.');
+        hideLoadingOverlay();
         showView('search');
     }
 }
@@ -562,7 +573,7 @@ async function handleRefinement() {
     // Initialize and show progress steps
     const steps = PROGRESS_STEPS.refine;
     initializeProgressSteps(steps);
-    showView('loading');
+    showLoadingOverlay();
 
     try {
         let imageData = null;
@@ -651,13 +662,15 @@ async function handleRefinement() {
         // Cache suggestions for this concept
         currentState.suggestionCache[currentState.currentConceptIndex] = suggestions;
 
-        // Show workbench with everything ready
+        // Hide loading overlay and show workbench with everything ready
+        hideLoadingOverlay();
         showView('workbench');
         displayConceptWithHistory();
 
     } catch (error) {
         console.error('Refinement error:', error);
         alert('An error occurred while refining the design. Please try again.');
+        hideLoadingOverlay();
         showView('workbench');
     }
 }
@@ -669,7 +682,7 @@ async function handleFindProducts() {
     // Initialize and show progress steps
     const steps = PROGRESS_STEPS.matchProducts;
     initializeProgressSteps(steps);
-    showView('loading');
+    showLoadingOverlay();
 
     try {
         // Get current concept
@@ -698,11 +711,13 @@ async function handleFindProducts() {
 
         currentState.products = data.products;
         displayProducts(data.products, data.match_description);
+        hideLoadingOverlay();
         showView('products');
 
     } catch (error) {
         console.error('Product matching error:', error);
         alert('An error occurred while finding products. Please try again.');
+        hideLoadingOverlay();
         showView('workbench');
     }
 }
@@ -1047,7 +1062,7 @@ async function handleCreateLook() {
     // Initialize and show progress steps
     const steps = PROGRESS_STEPS.createLook;
     initializeProgressSteps(steps);
-    showView('loading');
+    showLoadingOverlay();
 
     try {
         // Run progress steps with API call at index 1
@@ -1075,12 +1090,14 @@ async function handleCreateLook() {
         // Display the look
         displayGeneratedLook(data);
 
-        // Show look builder view
+        // Hide loading overlay and show look builder view
+        hideLoadingOverlay();
         showView('lookBuilder');
 
     } catch (error) {
         console.error('Look creation error:', error);
         alert('An error occurred while creating your look. Please try again.');
+        hideLoadingOverlay();
         showView('products');
     }
 }
@@ -1443,7 +1460,7 @@ async function handleSearchByImage() {
     // Initialize and show progress steps
     const steps = PROGRESS_STEPS.search;
     initializeProgressSteps(steps);
-    showView('loading');
+    showLoadingOverlay();
 
     try {
         let imageData = null;
@@ -1545,13 +1562,15 @@ async function handleSearchByImage() {
             uploadButton.classList.remove('active');
         }
 
-        // Show workbench with everything ready
+        // Hide loading overlay and show workbench with everything ready
+        hideLoadingOverlay();
         showView('workbench');
         displayConceptWithHistory();
 
     } catch (error) {
         console.error('Image search error:', error);
         alert('An error occurred while processing your image. Please try again.');
+        hideLoadingOverlay();
         showView('search');
     }
 }
