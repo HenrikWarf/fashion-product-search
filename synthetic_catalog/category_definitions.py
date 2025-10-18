@@ -3,14 +3,18 @@ Category definitions and attribute templates for synthetic product generation.
 H&M-inspired women's fashion catalog.
 """
 
-# Category distribution (total: 200 products)
+# Category distribution (total: 300 products for gap filling)
 CATEGORY_DISTRIBUTION = {
     "Tops": 45,
     "Bottoms": 40,
     "Dresses": 40,
     "Outerwear": 30,
-    "Activewear": 20,
-    "Knitwear": 25
+    "Activewear": 40,  # Increased from 20
+    "Knitwear": 25,
+    "Shoes": 50,       # NEW
+    "Accessories": 30,  # NEW
+    "Swimwear": 15,    # NEW
+    "Loungewear": 15   # NEW
 }
 
 # Subcategories for each main category
@@ -20,7 +24,11 @@ SUBCATEGORIES = {
     "Dresses": ["Casual Dress", "Midi Dress", "Maxi Dress", "Mini Dress", "Shirt Dress", "Wrap Dress"],
     "Outerwear": ["Jacket", "Coat", "Blazer", "Vest", "Parka", "Trench Coat"],
     "Activewear": ["Sports Bra", "Training Top", "Leggings", "Hoodie", "Track Jacket", "Joggers"],
-    "Knitwear": ["Sweater", "Cardigan", "Turtleneck", "Pullover", "Knit Top", "Jumper"]
+    "Knitwear": ["Sweater", "Cardigan", "Turtleneck", "Pullover", "Knit Top", "Jumper"],
+    "Shoes": ["Sneakers", "Sandals", "Boots", "Flats", "Heels", "Loafers", "Mules", "Slides"],
+    "Accessories": ["Handbag", "Crossbody Bag", "Tote Bag", "Scarf", "Belt", "Hat", "Sunglasses", "Jewelry", "Hair Accessories"],
+    "Swimwear": ["Bikini Top", "Bikini Bottom", "One-Piece Swimsuit", "Tankini", "Swim Cover-Up", "Rash Guard"],
+    "Loungewear": ["Pajama Set", "Sleep Shirt", "Lounge Pants", "Robe", "Sleep Shorts", "Lounge Dress"]
 }
 
 # Color palette (H&M-inspired: modern, wearable, seasonal)
@@ -148,7 +156,11 @@ PRICE_RANGES = {
     "Dresses": (39.99, 79.99),
     "Outerwear": (59.99, 89.99),
     "Activewear": (24.99, 49.99),
-    "Knitwear": (34.99, 54.99)
+    "Knitwear": (34.99, 54.99),
+    "Shoes": (39.99, 89.99),
+    "Accessories": (14.99, 49.99),
+    "Swimwear": (24.99, 59.99),
+    "Loungewear": (29.99, 54.99)
 }
 
 # Description templates
@@ -158,7 +170,11 @@ DESCRIPTION_TEMPLATES = {
     "Dresses": "Elegant {subcategory} in {color} made from {fabric}. This {fit} dress features {pattern} detailing and {sleeve_length}. Perfect for {occasion}.",
     "Outerwear": "Essential {subcategory} in {color} made from durable {fabric}. {fit} silhouette with {pattern} design. Versatile piece for {season} layering.",
     "Activewear": "Performance-oriented {subcategory} in {color}. Made from breathable {fabric} with a {fit}. Designed for {occasion} activities with moisture-wicking properties.",
-    "Knitwear": "Cozy {subcategory} in {color} knitted from soft {fabric}. Features a {fit} with {pattern} texture. Essential piece for {season} comfort."
+    "Knitwear": "Cozy {subcategory} in {color} knitted from soft {fabric}. Features a {fit} with {pattern} texture. Essential piece for {season} comfort.",
+    "Shoes": "Stylish {subcategory} in {color} crafted with {fabric} materials. Features a {fit} design with {pattern} detailing. Perfect for {occasion} wear and {season} styling.",
+    "Accessories": "Chic {subcategory} in {color} featuring {fabric} construction. {style} accessory with {pattern} design. Versatile piece for {occasion} occasions.",
+    "Swimwear": "Modern {subcategory} in {color} made from {fabric} swimwear fabric. Features a {fit} with {pattern} styling. Perfect for {season} beach and pool days.",
+    "Loungewear": "Comfortable {subcategory} in {color} crafted from soft {fabric}. Features a {fit} with {pattern} design. Ideal for {occasion} relaxation and {season} comfort."
 }
 
 

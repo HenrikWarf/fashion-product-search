@@ -31,3 +31,6 @@ Thumbs.db
 
 # Generated images
 generated_images/
+
+# Synthetic Catalog
+synthetic_catalog/

@@ -215,6 +215,236 @@ class ProductSearchService:
             print(f"{'='*60}\n")
             return []
 
+    async def search_products_multi_category(
+        self,
+        image_url: str,
+        parsed_attributes: Dict[str, Any],
+        limit_per_category: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Search products across multiple categories using garment region analysis.
+
+        Args:
+            image_url: URL/path to the generated concept image
+            parsed_attributes: Parsed attributes from NLU service
+            limit_per_category: Maximum number of results per category
+
+        Returns:
+            Dictionary containing:
+            - products_by_category: Dict[category -> List[products]]
+            - all_products: Flat list of all products (for backward compatibility)
+            - search_mode: "multi_category" or "single"
+        """
+
+        try:
+            print(f"\n{'='*80}")
+            print(f"MULTI-CATEGORY PRODUCT SEARCH")
+            print(f"{'='*80}")
+            print(f"Image URL: {image_url}")
+            print(f"Limit per category: {limit_per_category}")
+
+            # Step 1: Analyze garment regions using Gemini vision
+            from services.nlu_service import NLUService
+            nlu_service = NLUService()
+
+            print(f"\n[1/4] Analyzing garment regions...")
+            garments = await nlu_service.analyze_garment_regions(image_url)
+
+            if not garments or len(garments) == 0:
+                print(f"[!] No garments detected, falling back to single-embedding search")
+                # Fallback to single embedding search
+                products = await self.search_products_by_image(
+                    image_url,
+                    parsed_attributes,
+                    limit=limit_per_category * 2
+                )
+                return {
+                    "products_by_category": {},
+                    "all_products": products,
+                    "search_mode": "single"
+                }
+
+            print(f"[✓] Detected {len(garments)} garment(s)")
+
+            # Step 2: Generate a single image embedding from the concept image
+            # Use the SAME image embedding for all categories to match product embeddings
+            print(f"\n[2/4] Generating image embedding from concept image...")
+            print(f"  [!] Using IMAGE embedding (not text) to match product database embedding space")
+            query_embedding = await self._generate_image_embedding(image_url)
+            print(f"  [✓] Image embedding generated (magnitude: {sum(x*x for x in query_embedding)**0.5:.4f})")
+
+            # Create garment data with the shared image embedding
+            garment_embeddings = []
+            for garment in garments:
+                garment_embeddings.append({
+                    "category": garment['category'],
+                    "subcategory": garment['subcategory'],
+                    "description": garment['description'],
+                    "embedding": query_embedding  # Same image embedding for all categories
+                })
+            print(f"  [✓] Using shared image embedding for {len(garment_embeddings)} categories")
+
+            # Step 3: Search products for each category
+            print(f"\n[3/4] Searching products for each category...")
+            products_by_category = {}
+            all_products = []
+
+            for i, garment_data in enumerate(garment_embeddings, 1):
+                category = garment_data['category']
+                embedding = garment_data['embedding']
+
+                print(f"  [{i}/{len(garment_embeddings)}] Searching for {category}...")
+
+                # Build category-specific query
+                sql_query = self._build_category_specific_query(
+                    embedding,
+                    category,
+                    garment_data['subcategory'],
+                    limit_per_category
+                )
+
+                print(f"\n--- SQL Query for {category} ---")
+                print(sql_query)
+                print(f"--- End SQL Query ---\n")
+
+                # Execute query
+                query_job = self.gcp_client.bigquery.query(sql_query)
+                results = query_job.result()
+
+                # Format results
+                category_products = []
+                for row in results:
+                    gcs_uri = row.get("gcs_uri", "")
+                    image_url_converted = self._convert_gcs_uri_to_url(gcs_uri)
+
+                    price_discounted = row.get("price_discounted")
+                    price_original = row.get("price_original", 0)
+                    price = price_discounted if price_discounted else price_original
+
+                    distance = float(row.get("distance", 1.0))
+                    similarity_score = max(0.0, 1.0 - distance)
+
+                    product = {
+                        "id": row.get("product_id", ""),
+                        "name": row.get("product_name", "Product"),
+                        "description": row.get("description", ""),
+                        "price": float(price) if price else 0.0,
+                        "price_original": float(price_original) if price_original else 0.0,
+                        "price_discounted": float(price_discounted) if price_discounted else None,
+                        "image_url": image_url_converted,
+                        "color": row.get("base_color", ""),
+                        "secondary_color": row.get("secondary_color"),
+                        "category": row.get("category", ""),
+                        "subcategory": row.get("subcategory"),
+                        "brand": row.get("brand_name", ""),
+                        "pattern": row.get("pattern"),
+                        "fabric": row.get("fabric"),
+                        "fit": row.get("fit"),
+                        "sleeve_length": row.get("sleeve_length"),
+                        "neck_style": row.get("neck_style"),
+                        "season": row.get("season", ""),
+                        "occasion": row.get("occasion"),
+                        "style": row.get("style"),
+                        "gender": "Women",
+                        "similarity_score": similarity_score,
+                        "matched_category": category  # Add category label
+                    }
+                    category_products.append(product)
+                    all_products.append(product)
+
+                products_by_category[category] = category_products
+                print(f"  [✓] Found {len(category_products)} products for {category}")
+
+            print(f"\n[4/4] Total products found: {len(all_products)}")
+            print(f"{'='*80}\n")
+
+            return {
+                "products_by_category": products_by_category,
+                "all_products": all_products,
+                "search_mode": "multi_category"
+            }
+
+        except Exception as e:
+            print(f"\n[✗] Error in multi-category search: {e}")
+            import traceback
+            traceback.print_exc()
+
+            # Fallback to single-embedding search
+            print(f"[!] Falling back to single-embedding search")
+            products = await self.search_products_by_image(
+                image_url,
+                parsed_attributes,
+                limit=limit_per_category * 2
+            )
+            return {
+                "products_by_category": {},
+                "all_products": products,
+                "search_mode": "single"
+            }
+
+    def _build_category_specific_query(
+        self,
+        query_embedding: List[float],
+        category: str,
+        subcategory: str,
+        limit: int
+    ) -> str:
+        """
+        Build BigQuery query for category-specific search.
+
+        Args:
+            query_embedding: Embedding vector for the garment
+            category: Main category (Tops, Bottoms, etc.)
+            subcategory: Specific garment type
+            limit: Max results
+
+        Returns:
+            SQL query string
+        """
+        dataset = self.settings.bigquery_dataset
+        table = self.settings.bigquery_table
+
+        # Convert embedding to string for SQL
+        embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
+
+        # Build category filter in the subquery BEFORE vector search
+        category_filter = f"LOWER(category) = '{category.lower()}'"
+
+        # Filter the table first, then do vector search on filtered results
+        # VECTOR_SEARCH creates an implicit 'base' table reference
+        query = f"""
+        SELECT
+            base.product_id,
+            base.product_name,
+            base.brand_name,
+            base.category,
+            base.subcategory,
+            base.base_color,
+            base.secondary_color,
+            base.pattern,
+            base.fabric,
+            base.fit,
+            base.sleeve_length,
+            base.neck_style,
+            base.season,
+            base.occasion,
+            base.style,
+            base.price_original,
+            base.price_discounted,
+            base.description,
+            base.gcs_uri,
+            distance
+        FROM VECTOR_SEARCH(
+            (SELECT * FROM `{dataset}.{table}` WHERE {category_filter}),
+            'embedding',
+            (SELECT {embedding_str} AS embedding),
+            top_k => {limit},
+            distance_type => 'COSINE'
+        )
+        """
+
+        return query
+
     async def _generate_text_embedding(self, text: str) -> List[float]:
         """
         Generate embedding for text using Google's multimodal embedding model.

@@ -743,10 +743,56 @@ function displayProducts(products, matchDescription) {
         return;
     }
 
-    products.forEach(product => {
-        const productCard = createProductCard(product);
-        productsGrid.appendChild(productCard);
-    });
+    // Check if products have matched_category field (multi-category search)
+    const hasCategories = products.some(p => p.matched_category);
+
+    if (hasCategories) {
+        // Group products by category
+        const productsByCategory = {};
+        products.forEach(product => {
+            const category = product.matched_category || 'Other';
+            if (!productsByCategory[category]) {
+                productsByCategory[category] = [];
+            }
+            productsByCategory[category].push(product);
+        });
+
+        // Display products organized by category
+        Object.keys(productsByCategory).sort().forEach(category => {
+            const categoryProducts = productsByCategory[category];
+
+            // Create category section
+            const categorySection = document.createElement('div');
+            categorySection.className = 'category-section';
+
+            // Category header
+            const categoryHeader = document.createElement('div');
+            categoryHeader.className = 'category-header';
+            categoryHeader.innerHTML = `
+                <h3 class="category-title">${category}</h3>
+                <span class="category-count">${categoryProducts.length} item${categoryProducts.length === 1 ? '' : 's'}</span>
+            `;
+            categorySection.appendChild(categoryHeader);
+
+            // Category products grid
+            const categoryGrid = document.createElement('div');
+            categoryGrid.className = 'category-products-grid';
+
+            categoryProducts.forEach(product => {
+                const productCard = createProductCard(product);
+                categoryGrid.appendChild(productCard);
+            });
+
+            categorySection.appendChild(categoryGrid);
+            productsGrid.appendChild(categorySection);
+        });
+    } else {
+        // Fallback: Display products in single grid (backward compatibility)
+        products.forEach(product => {
+            const productCard = createProductCard(product);
+            productsGrid.appendChild(productCard);
+        });
+    }
 }
 
 function createProductCard(product) {

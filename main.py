@@ -98,6 +98,7 @@ class Product(BaseModel):
     style: Optional[str] = None
     gender: Optional[str] = None
     similarity_score: float
+    matched_category: Optional[str] = None  # For multi-category search grouping
 
 
 class MatchProductsResponse(BaseModel):
@@ -248,33 +249,46 @@ async def refine(request: RefineRequest):
 @app.post("/api/match-products", response_model=MatchProductsResponse)
 async def match_products(request: MatchProductsRequest):
     """
-    Find matching products from catalog using vector search.
+    Find matching products from catalog using multi-category vector search.
 
     Flow:
     1. Re-parse the query for attributes
-    2. Use image description to generate embedding
-    3. Search BigQuery with vector similarity
-    4. Return ranked products
+    2. Analyze concept image to identify garment regions (Gemini vision)
+    3. Generate embeddings for each garment type
+    4. Search BigQuery with category-specific queries
+    5. Return products grouped by category + flat list for compatibility
     """
     try:
         # Re-parse query for filtering attributes
         parsed_attributes = await nlu_service.parse_fashion_query(request.query)
 
-        # Search products using the generated concept image
-        products = await product_service.search_products_by_image(
+        # Use multi-category search (with fallback to single-embedding)
+        search_results = await product_service.search_products_multi_category(
             request.image_url,
             parsed_attributes,
-            limit=10
+            limit_per_category=5
         )
+
+        # Extract results
+        products_by_category = search_results.get("products_by_category", {})
+        all_products = search_results.get("all_products", [])
+        search_mode = search_results.get("search_mode", "single")
 
         # Generate match description
-        match_description = product_service.generate_match_description(
-            products,
-            parsed_attributes
-        )
+        if search_mode == "multi_category" and products_by_category:
+            # Multi-category description
+            category_counts = {cat: len(prods) for cat, prods in products_by_category.items()}
+            category_list = ", ".join([f"{count} {cat.lower()}" for cat, count in category_counts.items()])
+            match_description = f"Found {category_list} that match your style concept across multiple categories."
+        else:
+            # Single-category fallback description
+            match_description = product_service.generate_match_description(
+                all_products,
+                parsed_attributes
+            )
 
         return MatchProductsResponse(
-            products=[Product(**p) for p in products],
+            products=[Product(**p) for p in all_products],
             match_description=match_description
         )
 

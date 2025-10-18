@@ -130,6 +130,131 @@ Ensure the visual_generation_prompt is highly detailed and describes a specific,
             "search_keywords": query.split()
         }
 
+    async def analyze_garment_regions(self, image_url: str) -> List[Dict[str, str]]:
+        """
+        Analyze a fashion concept image to identify distinct garment types/regions.
+        Uses Gemini vision to detect individual garments and extract detailed descriptions.
+
+        Args:
+            image_url: URL/path to the concept image
+
+        Returns:
+            List of garment regions with categories and descriptions
+            Example: [
+                {
+                    "category": "Tops",
+                    "subcategory": "Blazer",
+                    "description": "Navy structured blazer with notch lapels and gold buttons"
+                },
+                {
+                    "category": "Bottoms",
+                    "subcategory": "Trousers",
+                    "description": "Grey tailored trousers with straight leg"
+                }
+            ]
+        """
+        import base64
+        import io
+        from PIL import Image
+        import traceback
+        import os
+
+        print(f"\n{'='*80}")
+        print("GARMENT REGION ANALYSIS")
+        print(f"{'='*80}")
+        print(f"Image URL: {image_url}")
+
+        try:
+            # Load image from local path
+            if image_url.startswith('/images/'):
+                filename = image_url.replace('/images/', '')
+                filepath = os.path.join('generated_images', filename)
+            else:
+                filepath = image_url
+
+            print(f"Resolved file path: {filepath}")
+            print(f"File exists: {os.path.exists(filepath)}")
+
+            if not os.path.exists(filepath):
+                print(f"[ERROR] Image file not found at {filepath}")
+                return []
+
+            # Load image for Gemini vision
+            from vertexai.generative_models import Image as GeminiImage
+            image = GeminiImage.load_from_file(filepath)
+            print(f"[✓] Image loaded successfully")
+
+            # Create analysis prompt
+            analysis_prompt = """Analyze this fashion concept image and identify each distinct garment or fashion item shown.
+
+For each garment you identify, extract:
+1. **Category**: Main category from this list ONLY: Tops, Bottoms, Dresses, Shoes, Accessories, Outerwear
+2. **Subcategory**: Specific garment type (e.g., Blazer, Trousers, Sneakers, Dress, Handbag)
+3. **Description**: Detailed description including color, style, fit, fabric, patterns, and key distinguishing details
+
+IMPORTANT GUIDELINES:
+- Only include garments that are clearly visible and identifiable
+- Each description should be detailed enough to search for similar products in a catalog
+- Include: colors, fit/silhouette, style details, materials/fabrics, patterns, and notable features
+- If it's a single-piece outfit (like a dress or jumpsuit), return just that one item
+- If multiple items are shown (e.g., top + bottom + shoes), list each separately
+- Be specific: "navy structured blazer" not just "blazer", "high-waisted grey trousers" not just "pants"
+
+Return your analysis in this exact JSON format:
+{
+    "garments": [
+        {
+            "category": "Tops",
+            "subcategory": "Blazer",
+            "description": "Structured navy blazer with notch lapels, fitted silhouette, gold buttons, and professional tailoring"
+        },
+        {
+            "category": "Bottoms",
+            "subcategory": "Trousers",
+            "description": "High-waisted grey wool trousers with straight leg, pleated front, and tailored fit"
+        }
+    ]
+}
+
+Return only the JSON, no additional text."""
+
+            # Use Gemini vision model
+            print(f"[2/3] Calling Gemini vision API...")
+            model = self.gcp_client.get_gemini_model()
+            response = model.generate_content([analysis_prompt, image])
+
+            print(f"[✓] Gemini response received")
+
+            # Extract JSON from response
+            response_text = response.text.strip()
+            print(f"Response text preview: {response_text[:200]}...")
+
+            # Remove markdown code blocks if present
+            if response_text.startswith("```json"):
+                response_text = response_text[7:]
+            if response_text.startswith("```"):
+                response_text = response_text[3:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
+
+            import json
+            parsed_data = json.loads(response_text.strip())
+            garments = parsed_data.get("garments", [])
+
+            print(f"[✓] Successfully identified {len(garments)} garment(s):")
+            for i, garment in enumerate(garments, 1):
+                print(f"  {i}. {garment['category']} - {garment['subcategory']}")
+                print(f"     Description: {garment['description'][:80]}...")
+
+            print(f"{'='*80}\n")
+            return garments
+
+        except Exception as e:
+            print(f"[ERROR] Error analyzing garment regions: {e}")
+            traceback.print_exc()
+            print(f"{'='*80}\n")
+            return []
+
     async def analyze_image_for_style(self, image_data: str, additional_description: Optional[str] = None) -> Dict[str, Any]:
         """
         Analyze an uploaded image using Gemini vision to extract style attributes.
