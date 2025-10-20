@@ -61,50 +61,45 @@ class SuggestionService:
             print(f"[✓] Model initialized")
 
             # Create analysis prompt
-            prompt = f"""Analyze this fashion concept image and generate 4-6 detailed style variation suggestions that maintain the core theme and aesthetic.
+            prompt = f"""Analyze this WOMEN'S fashion concept image and generate 6-8 actionable edit suggestions that the user can apply to refine this design.
+
+CRITICAL: This is WOMEN'S FASHION ONLY. All suggestions must be appropriate for women's clothing and styles.
 
 Current Design Context:
 - Description: {description}
 - Original Request: {original_query}
 
-CRITICAL REQUIREMENTS:
-1. **Preserve the Core Theme**: Each variation MUST maintain the fundamental style, mood, and aesthetic of the original concept
-2. **Be Detailed and Descriptive**: Each suggestion should be 1-2 sentences with rich, specific details
-3. **Offer Meaningful Variations**: Suggest genuinely different interpretations, not minor tweaks
-4. **Appeal to Fashion Shoppers**: Write suggestions that would excite someone looking for alternatives
+Generate a MIX of suggestions:
 
-Generate suggestions covering different aspects:
-- **Color Palette Variations**: Alternative color schemes that preserve the mood (e.g., "Luxe emerald green interpretation with the same flowing silhouette and bohemian details, featuring subtle gold embroidery along the neckline")
-- **Silhouette & Length**: Different cuts while maintaining style (e.g., "Elegant tea-length version with A-line silhouette and delicate cap sleeves, preserving the romantic floral aesthetic")
-- **Occasion Adaptation**: Dress up/down while keeping essence (e.g., "Elevated evening version in luxe satin with the original's relaxed fit, adding subtle beading for sophisticated occasions")
-- **Seasonal Variations**: Adapt for different seasons (e.g., "Cozy autumn interpretation with the same silhouette in rich burgundy knit, maintaining the effortless bohemian vibe")
-- **Detail & Embellishment**: Add distinctive features (e.g., "Enhanced version with intricate lace trim and flutter sleeves, keeping the original's whimsical garden party aesthetic")
-- **Fabric & Texture**: Material variations that keep the style (e.g., "Lightweight linen version perfect for summer, maintaining the breezy relaxed fit and coastal aesthetic")
+**GENERIC EDITS (3-4 suggestions)** - Common modifications that work for most fashion items:
+- Color changes: "make it burgundy", "change to navy blue", "try it in cream"
+- Length adjustments: "make it longer", "change to midi length", "shorten to mini"
+- Pattern modifications: "add stripes", "remove the pattern", "add floral print"
+- Fit changes: "make it more fitted", "add a relaxed fit", "make it oversized"
 
-EXAMPLES OF GOOD SUGGESTIONS:
-- Title: "Evening Elegance" | Description: "Sophisticated midi-length version in dusty rose with tiered ruffles and a fitted bodice, preserving the feminine romantic garden aesthetic"
-- Title: "Jewel Tones" | Description: "Bold jewel-toned interpretation featuring the same relaxed silhouette in deep sapphire with golden embroidered details for evening elegance"
-- Title: "Minimalist Chic" | Description: "Minimalist cream version with clean lines and subtle pleating, maintaining the effortless chic vibe in a more understated palette"
+**IMAGE-SPECIFIC EDITS (3-4 suggestions)** - Based on what you actually see in the image:
+- Specific details to modify: "add puff sleeves", "change to V-neck", "add a belt"
+- Elements to add/remove: "remove the ruffles", "add lace trim", "simplify the neckline"
+- Style tweaks: "make it more casual", "add formal details", "give it bohemian touches"
 
-Return your suggestions in this exact JSON format with both title and description:
+IMPORTANT:
+- Each suggestion must be SHORT and ACTIONABLE (2-6 words)
+- Write as if the user is speaking: "make it...", "add...", "change to...", "remove..."
+- Focus on ONE clear edit per suggestion
+- Be specific and concrete, not vague
+
+GOOD examples: "make it burgundy", "add long sleeves", "change to maxi length", "remove the belt", "add floral pattern"
+BAD examples: "Consider a different color palette", "This would look great with different sleeves", "Try changing the style"
+
+Return ONLY this JSON format:
 {{
     "suggestions": [
-        {{
-            "title": "Evening Elegance",
-            "description": "Sophisticated midi-length version in dusty rose with tiered ruffles and a fitted bodice, preserving the feminine romantic garden aesthetic"
-        }},
-        {{
-            "title": "Jewel Tones",
-            "description": "Bold jewel-toned interpretation featuring the same relaxed silhouette in deep sapphire with golden embroidered details for evening elegance"
-        }},
-        {{
-            "title": "Minimalist Chic",
-            "description": "Minimalist cream version with clean lines and subtle pleating, maintaining the effortless chic vibe in a more understated palette"
-        }},
-        {{
-            "title": "Autumn Warmth",
-            "description": "Cozy autumn interpretation in rich burgundy knit with the original's flowing shape, adding cable-knit texture for warmth"
-        }}
+        "make it burgundy",
+        "add puff sleeves",
+        "change to midi length",
+        "remove the pattern",
+        "make it more fitted",
+        "add a belt"
     ]
 }}
 
@@ -153,14 +148,6 @@ Return only the JSON, no additional text."""
                 suggestions = parsed_data.get("suggestions", [])
             except json.JSONDecodeError as json_err:
                 print(f"[✗] JSON parsing failed: {json_err}")
-                print(f"[!] Trying to extract partial suggestions from malformed JSON...")
-
-                # Try to extract any complete suggestions from the partial JSON
-                suggestions = self._extract_partial_suggestions(response_text)
-                if suggestions:
-                    print(f"[✓] Extracted {len(suggestions)} partial suggestions")
-                    return suggestions
-
                 print(f"[!] Using fallback suggestions")
                 return self._fallback_suggestions()
 
@@ -172,7 +159,7 @@ Return only the JSON, no additional text."""
             print("SUGGESTION GENERATION COMPLETED")
             print("="*80 + "\n")
 
-            return suggestions[:6]  # Return max 6 suggestions
+            return suggestions[:8]  # Return max 8 suggestions
 
         except Exception as e:
             print(f"\n[✗] ERROR generating suggestions:")
@@ -221,11 +208,13 @@ Return only the JSON, no additional text."""
 
         return suggestions
 
-    def _fallback_suggestions(self) -> List[dict]:
+    def _fallback_suggestions(self) -> List[str]:
         """Fallback suggestions when AI generation fails."""
         return [
-            {"title": "Color Variation", "description": "Try a different color palette while maintaining the overall aesthetic"},
-            {"title": "Length Adjustment", "description": "Adjust the length for a different silhouette"},
-            {"title": "Detail Enhancement", "description": "Add decorative elements or embellishments"},
-            {"title": "Silhouette Change", "description": "Modify the overall shape and fit"}
+            "change the color",
+            "adjust the length",
+            "add pattern details",
+            "modify the sleeves",
+            "make it more fitted",
+            "add embellishments"
         ]

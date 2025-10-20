@@ -644,6 +644,47 @@ body {
     color: var(--primary-color);
 }
 
+/* Initial Concepts Selector - Numbered Icons */
+.initial-concepts-selector {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.concept-number-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    background: var(--card-background);
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.concept-number-btn:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.concept-number-btn.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 4px rgba(13, 115, 119, 0.15);
+}
+
+.concept-number-btn:active {
+    transform: translateY(0);
+}
+
 .generated-image-container {
     background: var(--card-background);
     border-radius: 12px;
@@ -928,57 +969,36 @@ body {
 
 .suggestions-chips {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 0.75rem;
     padding: 0.25rem 0;
 }
 
 .suggestion-chip {
-    padding: 1rem 1.25rem;
+    padding: 8px 16px;
     background: var(--card-background);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: 20px;
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
-    text-align: left;
+    text-align: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.suggestion-chip-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--accent-color);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.suggestion-chip-description {
     font-size: 0.9rem;
     color: var(--text-primary);
-    line-height: 1.5;
+    display: inline-block;
 }
 
 .suggestion-chip:hover {
     background: var(--accent-color);
     border-color: var(--accent-color);
-    transform: translateX(4px);
+    color: white;
+    transform: translateY(-2px);
     box-shadow: 0 2px 8px rgba(13, 115, 119, 0.3);
 }
 
-.suggestion-chip:hover .suggestion-chip-title {
-    color: white;
-}
-
-.suggestion-chip:hover .suggestion-chip-description {
-    color: white;
-}
-
 .suggestion-chip:active {
-    transform: translateX(2px);
+    transform: translateY(0);
 }
 
 /* Products View */

@@ -41,9 +41,14 @@ class SearchRequest(BaseModel):
     query: str
 
 
-class SearchResponse(BaseModel):
+class ConceptImage(BaseModel):
     image_url: str
     description: str
+    variation_type: str
+
+
+class SearchResponse(BaseModel):
+    images: List[ConceptImage]
     parsed_attributes: Dict[str, Any]
 
 
@@ -112,13 +117,8 @@ class SuggestionRequest(BaseModel):
     query: str
 
 
-class StyleSuggestion(BaseModel):
-    title: str
-    description: str
-
-
 class SuggestionResponse(BaseModel):
-    suggestions: List[StyleSuggestion]
+    suggestions: List[str]
 
 
 class CreateLookRequest(BaseModel):
@@ -141,27 +141,49 @@ async def root():
 @app.post("/api/search", response_model=SearchResponse)
 async def search(request: SearchRequest):
     """
-    Main search endpoint: Parse query and generate concept image.
+    Main search endpoint: Parse query and generate 3 concept image variations.
 
     Flow:
     1. Parse natural language query with Gemini NLU
-    2. Generate visual concept image using Gemini Flash 2.5 Image
-    3. Return image and description
+    2. Generate 3 distinct prompt variations
+    3. Generate 3 concept images in parallel using Gemini Flash 2.5 Image
+    4. Return array of images with descriptions
     """
+    import asyncio
+    
     try:
         # Parse the fashion query
         parsed_attributes = await nlu_service.parse_fashion_query(request.query)
 
-        # Generate concept image
-        visual_prompt = parsed_attributes.get("visual_generation_prompt", request.query)
-        image_result = await image_service.generate_concept_image(
-            visual_prompt,
-            parsed_attributes
+        # Generate 3 prompt variations
+        prompt_variations = await nlu_service.generate_prompt_variations(
+            parsed_attributes, 
+            request.query
         )
 
+        # Generate 3 images in parallel
+        image_tasks = [
+            image_service.generate_concept_image(
+                variation["visual_prompt"],
+                parsed_attributes
+            )
+            for variation in prompt_variations
+        ]
+        
+        image_results = await asyncio.gather(*image_tasks)
+
+        # Build response with all 3 concept images
+        concept_images = [
+            ConceptImage(
+                image_url=result["image_url"],
+                description=result["description"],
+                variation_type=prompt_variations[i]["variation_type"]
+            )
+            for i, result in enumerate(image_results)
+        ]
+
         return SearchResponse(
-            image_url=image_result["image_url"],
-            description=image_result["description"],
+            images=concept_images,
             parsed_attributes=parsed_attributes
         )
 

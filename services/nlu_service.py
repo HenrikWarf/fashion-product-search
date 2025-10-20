@@ -19,7 +19,9 @@ class NLUService:
             Dictionary containing extracted attributes and visual generation prompt
         """
 
-        parsing_prompt = f"""You are an expert fashion stylist and AI assistant. Analyze the following fashion search query and extract structured information.
+        parsing_prompt = f"""You are an expert fashion stylist and AI assistant specializing in WOMEN'S FASHION. Analyze the following fashion search query and extract structured information.
+
+IMPORTANT: This application is exclusively for women's fashion and clothing. All garments, styles, and recommendations must be for women.
 
 User Query: "{query}"
 
@@ -130,6 +132,130 @@ Ensure the visual_generation_prompt is highly detailed and describes a specific,
             "search_keywords": query.split()
         }
 
+    async def generate_prompt_variations(
+        self, 
+        parsed_attributes: Dict[str, Any], 
+        original_query: str
+    ) -> List[Dict[str, str]]:
+        """
+        Generate 3 distinct visual prompt variations from the same parsed attributes.
+        Each variation focuses on a different interpretation aspect:
+        - Variation 1: Different color palette interpretation
+        - Variation 2: Different silhouette/fit interpretation
+        - Variation 3: Different style/occasion interpretation
+
+        Args:
+            parsed_attributes: Parsed attributes from parse_fashion_query
+            original_query: Original user query
+
+        Returns:
+            List of 3 dictionaries with 'prompt' and 'variation_type' keys
+        """
+
+        variation_prompt = f"""You are an expert fashion stylist specializing in WOMEN'S FASHION. Based on this fashion search query and its parsed attributes, create 3 DISTINCT visual concept variations.
+
+CRITICAL: This application is EXCLUSIVELY for women's fashion. All concepts MUST be for women's clothing and styles. Never generate men's fashion.
+
+Original Query: "{original_query}"
+
+Parsed Attributes:
+{parsed_attributes}
+
+Generate 3 different interpretations of this request, each taking a different creative direction while staying true to the core request:
+
+**VARIATION 1 - COLOR PALETTE FOCUS**: 
+Create a version that explores an alternative color palette. If the original mentioned specific colors, try complementary or analogous colors. If no colors were specified, choose a bold, distinct color story.
+
+**VARIATION 2 - SILHOUETTE/FIT FOCUS**: 
+Create a version that explores a different silhouette or fit style. Try different lengths, proportions, or structural approaches (e.g., if original is fitted, try relaxed; if flowing, try structured).
+
+**VARIATION 3 - STYLE/MOOD FOCUS**: 
+Create a version that explores a different style interpretation or mood. Try different aesthetics (e.g., if original is classic, try modern; if casual, try elevated casual; if elegant, try edgy elegant).
+
+IMPORTANT REQUIREMENTS:
+- Each variation must maintain the core garment type(s) and occasion from the original request
+- Each variation should feel meaningfully DIFFERENT from the others
+- All variations should be realistic, purchasable designs (not avant-garde)
+- Keep the same catalog photography style specifications (clean backgrounds, professional lighting)
+
+Return your response in this exact JSON format:
+{{
+    "variations": [
+        {{
+            "variation_type": "Color Palette",
+            "visual_prompt": "Detailed prompt for variation 1 with specific color focus...",
+            "description": "Brief description of this variation's color approach"
+        }},
+        {{
+            "variation_type": "Silhouette & Fit",
+            "visual_prompt": "Detailed prompt for variation 2 with specific silhouette focus...",
+            "description": "Brief description of this variation's silhouette approach"
+        }},
+        {{
+            "variation_type": "Style & Mood",
+            "visual_prompt": "Detailed prompt for variation 3 with specific style focus...",
+            "description": "Brief description of this variation's style approach"
+        }}
+    ]
+}}
+
+Each visual_prompt should be detailed and ready to use for image generation."""
+
+        try:
+            model = self.gcp_client.get_gemini_model()
+            response = model.generate_content(variation_prompt)
+
+            # Extract JSON from response
+            response_text = response.text.strip()
+
+            # Remove markdown code blocks if present
+            if response_text.startswith("```json"):
+                response_text = response_text[7:]
+            if response_text.startswith("```"):
+                response_text = response_text[3:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
+
+            import json
+            parsed_data = json.loads(response_text.strip())
+            variations = parsed_data.get("variations", [])
+
+            if len(variations) == 3:
+                return variations
+            else:
+                print(f"Warning: Expected 3 variations, got {len(variations)}. Using fallback.")
+                return self._fallback_variations(parsed_attributes, original_query)
+
+        except Exception as e:
+            print(f"Error generating prompt variations with Gemini: {e}")
+            return self._fallback_variations(parsed_attributes, original_query)
+
+    def _fallback_variations(
+        self, 
+        parsed_attributes: Dict[str, Any], 
+        original_query: str
+    ) -> List[Dict[str, str]]:
+        """Fallback variations if Gemini fails."""
+        base_prompt = parsed_attributes.get("visual_generation_prompt", original_query)
+        
+        return [
+            {
+                "variation_type": "Color Palette",
+                "visual_prompt": f"{base_prompt} with vibrant jewel tones",
+                "description": "Bold jewel tone color palette"
+            },
+            {
+                "variation_type": "Silhouette & Fit",
+                "visual_prompt": f"{base_prompt} with a relaxed, flowing silhouette",
+                "description": "Relaxed, flowing fit"
+            },
+            {
+                "variation_type": "Style & Mood",
+                "visual_prompt": f"{base_prompt} with modern minimalist aesthetic",
+                "description": "Modern minimalist interpretation"
+            }
+        ]
+
     async def analyze_garment_regions(self, image_url: str) -> List[Dict[str, str]]:
         """
         Analyze a fashion concept image to identify distinct garment types/regions.
@@ -185,16 +311,18 @@ Ensure the visual_generation_prompt is highly detailed and describes a specific,
             print(f"[✓] Image loaded successfully")
 
             # Create analysis prompt
-            analysis_prompt = """Analyze this fashion concept image and identify each distinct garment or fashion item shown.
+            analysis_prompt = """Analyze this WOMEN'S fashion concept image and identify each distinct garment or fashion item shown.
+
+CRITICAL: This is WOMEN'S FASHION ONLY. All garments must be women's clothing items.
 
 For each garment you identify, extract:
 1. **Category**: Main category from this list ONLY: Tops, Bottoms, Dresses, Shoes, Accessories, Outerwear
-2. **Subcategory**: Specific garment type (e.g., Blazer, Trousers, Sneakers, Dress, Handbag)
+2. **Subcategory**: Specific women's garment type (e.g., Blazer, Trousers, Sneakers, Dress, Handbag)
 3. **Description**: Detailed description including color, style, fit, fabric, patterns, and key distinguishing details
 
 IMPORTANT GUIDELINES:
-- Only include garments that are clearly visible and identifiable
-- Each description should be detailed enough to search for similar products in a catalog
+- Only include women's garments that are clearly visible and identifiable
+- Each description should be detailed enough to search for similar women's products in a catalog
 - Include: colors, fit/silhouette, style details, materials/fabrics, patterns, and notable features
 - If it's a single-piece outfit (like a dress or jumpsuit), return just that one item
 - If multiple items are shown (e.g., top + bottom + shoes), list each separately
@@ -302,7 +430,9 @@ Return only the JSON, no additional text."""
             print(f"[DEBUG] Created Vertex AI image part")
 
             # Create analysis prompt
-            analysis_prompt = """You are an expert fashion stylist analyzing an uploaded image. Analyze the fashion style shown in this image and extract structured information.
+            analysis_prompt = """You are an expert fashion stylist specializing in WOMEN'S FASHION. Analyze the uploaded image and extract structured information.
+
+CRITICAL: This application is exclusively for WOMEN'S FASHION. If you detect men's fashion, convert/adapt it to equivalent women's fashion styles.
 
 """
             if additional_description:

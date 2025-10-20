@@ -153,7 +153,8 @@ document.getElementById('step4').addEventListener('click', () => {
 // Current State
 let currentState = {
     query: '',
-    conceptHistory: [],  // Array of {imageUrl, description, timestamp, refinementPrompt}
+    initialConcepts: [],  // Store the 3 initial concepts separately
+    conceptHistory: [],  // Array of {imageUrl, description, timestamp, refinementPrompt, variationType}
     currentConceptIndex: 0,
     products: [],
     suggestionCache: {},  // Cache suggestions per concept index
@@ -165,10 +166,9 @@ let currentState = {
 const PROGRESS_STEPS = {
     search: [
         { text: "Analyzing your style preferences...", duration: 1000 },
-        { text: "Understanding your vision...", duration: 1000 },
-        { text: "Creating your concept design...", duration: 0 }, // API call for image
-        { text: "Generating style variations...", duration: 0 }, // API call for suggestions
-        { text: "Finalizing your style...", duration: 500 }
+        { text: "Creating 3 concept variations...", duration: 0 }, // API call for 3 images
+        { text: "Generating style suggestions...", duration: 0 }, // API call for suggestions
+        { text: "Finalizing your options...", duration: 500 }
     ],
     refine: [
         { text: "Interpreting your refinement...", duration: 800 },
@@ -270,17 +270,15 @@ async function handleSearch() {
         let imageData = null;
         let suggestions = null;
 
-        // Step 1-2: Pre-image generation steps
-        for (let i = 0; i < 2; i++) {
-            const stepEl = document.getElementById(`progress-step-${i}`);
-            stepEl.classList.add('active');
-            await new Promise(resolve => setTimeout(resolve, steps[i].duration));
-            stepEl.classList.remove('active');
-            stepEl.classList.add('completed');
-        }
+        // Step 1: Pre-image generation step
+        const step1El = document.getElementById(`progress-step-0`);
+        step1El.classList.add('active');
+        await new Promise(resolve => setTimeout(resolve, steps[0].duration));
+        step1El.classList.remove('active');
+        step1El.classList.add('completed');
 
-        // Step 3: Generate concept image
-        const imageStepEl = document.getElementById(`progress-step-2`);
+        // Step 2: Generate 3 concept images
+        const imageStepEl = document.getElementById(`progress-step-1`);
         imageStepEl.classList.add('active');
         const response = await fetch(`${API_BASE_URL}/api/search`, {
             method: 'POST',
@@ -298,8 +296,8 @@ async function handleSearch() {
         imageStepEl.classList.remove('active');
         imageStepEl.classList.add('completed');
 
-        // Step 4: Generate style suggestions
-        const suggestionsStepEl = document.getElementById(`progress-step-3`);
+        // Step 3: Generate style suggestions for first concept
+        const suggestionsStepEl = document.getElementById(`progress-step-2`);
         suggestionsStepEl.classList.add('active');
 
         const suggestionsResponse = await fetch(`${API_BASE_URL}/api/suggest-refinements`, {
@@ -308,8 +306,8 @@ async function handleSearch() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                image_url: imageData.image_url,
-                description: imageData.description,
+                image_url: imageData.images[0].image_url,
+                description: imageData.images[0].description,
                 query: query
             })
         });
@@ -320,39 +318,46 @@ async function handleSearch() {
         } else {
             // Use fallback suggestions if API fails
             suggestions = [
-                {title: 'Color Variation', description: 'Try a different color palette while maintaining the overall aesthetic'},
-                {title: 'Length Adjustment', description: 'Adjust the length for a different silhouette'},
-                {title: 'Detail Enhancement', description: 'Add decorative elements or embellishments'},
-                {title: 'Silhouette Change', description: 'Modify the overall shape and fit'}
+                "change the color",
+                "adjust the length",
+                "add pattern details",
+                "modify the sleeves",
+                "make it more fitted",
+                "add embellishments"
             ];
         }
 
         suggestionsStepEl.classList.remove('active');
         suggestionsStepEl.classList.add('completed');
 
-        // Step 5: Finalizing
-        const finalStepEl = document.getElementById(`progress-step-4`);
+        // Step 4: Finalizing
+        const finalStepEl = document.getElementById(`progress-step-3`);
         finalStepEl.classList.add('active');
-        await new Promise(resolve => setTimeout(resolve, steps[4].duration));
+        await new Promise(resolve => setTimeout(resolve, steps[3].duration));
         finalStepEl.classList.remove('active');
         finalStepEl.classList.add('completed');
 
-        // Initialize concept history with first image
-        currentState.conceptHistory = [{
-            imageUrl: imageData.image_url,
-            description: imageData.description,
+        // Store all 3 initial concepts
+        currentState.initialConcepts = imageData.images.map((img, index) => ({
+            imageUrl: img.image_url,
+            description: img.description,
+            variationType: img.variation_type,
             timestamp: Date.now(),
-            refinementPrompt: null  // Original search
-        }];
+            refinementPrompt: null  // Original search concepts
+        }));
+
+        // Initialize concept history with all 3 images
+        currentState.conceptHistory = [...currentState.initialConcepts];
         currentState.currentConceptIndex = 0;
 
-        // Cache suggestions for this concept
+        // Cache suggestions for first concept
         currentState.suggestionCache[0] = suggestions;
 
         // Hide loading overlay and show workbench with everything ready
         hideLoadingOverlay();
         showView('workbench');
         displayConceptWithHistory();
+        showInitialConceptsSelector();
 
     } catch (error) {
         console.error('Search error:', error);
@@ -452,6 +457,51 @@ document.getElementById('historyNext').addEventListener('click', () => {
     }
 });
 
+// Initial Concepts Selector Functions
+function showInitialConceptsSelector() {
+    const selector = document.getElementById('initialConceptsSelector');
+    if (selector) {
+        selector.classList.remove('hidden');
+        updateNumberedButtons(currentState.currentConceptIndex);
+    }
+}
+
+function hideInitialConceptsSelector() {
+    const selector = document.getElementById('initialConceptsSelector');
+    if (selector) {
+        selector.classList.add('hidden');
+    }
+}
+
+function updateNumberedButtons(activeIndex) {
+    const buttons = document.querySelectorAll('.concept-number-btn');
+    buttons.forEach((btn, index) => {
+        if (index === activeIndex && activeIndex < 3) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+// Numbered button click handlers
+function initializeNumberedButtonHandlers() {
+    const buttons = document.querySelectorAll('.concept-number-btn');
+    buttons.forEach((btn, index) => {
+        btn.addEventListener('click', () => {
+            if (index < currentState.conceptHistory.length) {
+                navigateToConceptIndex(index);
+                updateNumberedButtons(index);
+            }
+        });
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initializeNumberedButtonHandlers();
+});
+
 // Style Suggestions Functionality
 async function fetchStyleSuggestions(conceptIndex) {
     // Check cache first
@@ -498,10 +548,12 @@ async function fetchStyleSuggestions(conceptIndex) {
         console.error('Error fetching suggestions:', error);
         // Display fallback suggestions on error
         const fallbackSuggestions = [
-            {title: 'Color Variation', description: 'Try a different color palette while maintaining the overall aesthetic'},
-            {title: 'Length Adjustment', description: 'Adjust the length for a different silhouette'},
-            {title: 'Detail Enhancement', description: 'Add decorative elements or embellishments'},
-            {title: 'Silhouette Change', description: 'Modify the overall shape and fit'}
+            "change the color",
+            "adjust the length",
+            "add pattern details",
+            "modify the sleeves",
+            "make it more fitted",
+            "add embellishments"
         ];
         displaySuggestions(fallbackSuggestions);
     } finally {
@@ -522,25 +574,26 @@ function displaySuggestions(suggestions) {
     suggestions.forEach(suggestion => {
         const chip = document.createElement('div');
         chip.className = 'suggestion-chip';
+        
+        // Simple text chip
+        chip.textContent = suggestion;
+        chip.title = `Click to add: "${suggestion}"`;
 
-        // Create title element
-        const title = document.createElement('div');
-        title.className = 'suggestion-chip-title';
-        title.textContent = suggestion.title || 'Style Variation';
-
-        // Create description element
-        const description = document.createElement('div');
-        description.className = 'suggestion-chip-description';
-        description.textContent = suggestion.description || suggestion;
-
-        chip.appendChild(title);
-        chip.appendChild(description);
-
-        // Click handler to populate refinement input with description
+        // Click handler to append to textarea
         chip.addEventListener('click', () => {
-            const refinementInput = document.getElementById('refinementInput');
-            refinementInput.value = suggestion.description || suggestion;
-            refinementInput.focus();
+            const textarea = document.getElementById('refinementInput');
+            const currentText = textarea.value.trim();
+            
+            // Append to existing text if there is any
+            if (currentText) {
+                textarea.value = currentText + ', ' + suggestion;
+            } else {
+                textarea.value = suggestion;
+            }
+            
+            // Focus textarea and move cursor to end
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
 
             // Add visual feedback
             chip.style.transform = 'scale(0.95)';
@@ -633,10 +686,12 @@ async function handleRefinement() {
         } else {
             // Use fallback suggestions if API fails
             suggestions = [
-                {title: 'Color Variation', description: 'Try a different color palette while maintaining the overall aesthetic'},
-                {title: 'Length Adjustment', description: 'Adjust the length for a different silhouette'},
-                {title: 'Detail Enhancement', description: 'Add decorative elements or embellishments'},
-                {title: 'Silhouette Change', description: 'Modify the overall shape and fit'}
+                "change the color",
+                "adjust the length",
+                "add pattern details",
+                "modify the sleeves",
+                "make it more fitted",
+                "add embellishments"
             ];
         }
 
@@ -658,6 +713,9 @@ async function handleRefinement() {
             refinementPrompt: refinementPrompt
         });
         currentState.currentConceptIndex = currentState.conceptHistory.length - 1;
+
+        // Hide numbered selector since we now have refinements (4+ concepts)
+        hideInitialConceptsSelector();
 
         // Cache suggestions for this concept
         currentState.suggestionCache[currentState.currentConceptIndex] = suggestions;
@@ -1566,10 +1624,12 @@ async function handleSearchByImage() {
         } else {
             // Use fallback suggestions if API fails
             suggestions = [
-                {title: 'Color Variation', description: 'Try a different color palette while maintaining the overall aesthetic'},
-                {title: 'Length Adjustment', description: 'Adjust the length for a different silhouette'},
-                {title: 'Detail Enhancement', description: 'Add decorative elements or embellishments'},
-                {title: 'Silhouette Change', description: 'Modify the overall shape and fit'}
+                "change the color",
+                "adjust the length",
+                "add pattern details",
+                "modify the sleeves",
+                "make it more fitted",
+                "add embellishments"
             ];
         }
 

@@ -142,6 +142,14 @@
             <div class="workbench-container">
                 <div class="image-section">
                     <h2>Your Style Concept</h2>
+                    
+                    <!-- Numbered selector for initial 3 concepts -->
+                    <div id="initialConceptsSelector" class="initial-concepts-selector hidden">
+                        <button class="concept-number-btn active" data-index="0">1</button>
+                        <button class="concept-number-btn" data-index="1">2</button>
+                        <button class="concept-number-btn" data-index="2">3</button>
+                    </div>
+                    
                     <div class="generated-image-container">
                         <img id="generatedImage" class="generated-image" alt="Generated fashion concept" />
                     </div>
@@ -197,7 +205,7 @@
                     <!-- Style Suggestions -->
                     <div class="style-suggestions" id="styleSuggestions">
                         <div class="suggestions-header">
-                            <span class="suggestions-label">Try These Variations:</span>
+                            <span class="suggestions-label">Suggested Edits:</span>
                             <div class="suggestions-loading hidden" id="suggestionsLoading">
                                 <div class="suggestions-spinner"></div>
                                 <span>Analyzing...</span>

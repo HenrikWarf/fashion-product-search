@@ -212,44 +212,47 @@ class LookGenerationService:
 
         products_text = "\n".join(product_descriptions)
 
-        prompt = f"""Create a professional e-commerce outfit photograph showing these fashion items styled together as a cohesive look:
+        prompt = f"""Create a professional WOMEN'S fashion e-commerce outfit photograph showing these fashion items styled together as a cohesive look:
 
 {products_text}
 
 CRITICAL REQUIREMENTS:
 
-1. **Show ALL Products Together**: The model must be wearing ALL of the listed items simultaneously in a single photograph. Every product must be clearly visible and recognizable.
+1. **WOMEN'S FASHION ONLY**: This MUST be women's fashion. Female model wearing women's clothing. All styling must be for women.
 
-2. **Contemporary Catalog Photography Style**:
-   - Modern fast-fashion aesthetic (H&M, Zara, COS style)
+2. **Show ALL Products Together**: The female model must be wearing ALL of the listed items simultaneously in a single photograph. Every product must be clearly visible and recognizable.
+
+3. **Contemporary Catalog Photography Style**:
+   - Modern women's fast-fashion aesthetic (H&M, Zara, COS style for women)
    - Clean, minimalist white or soft grey background
    - Professional studio lighting with soft, even illumination
-   - Natural, confident model pose
+   - Natural, confident female model pose
    - Front-facing composition showing full outfit
    - 9:16 portrait orientation (vertical/mobile-friendly)
 
-3. **Product Accuracy**:
+4. **Product Accuracy**:
    - Match the exact colors described for each product
    - Match the exact fabrics and textures
    - Match the exact styles and details (sleeves, necklines, patterns, etc.)
    - Ensure each product looks realistic and wearable
    - Maintain commercial viability - this should look like real catalog items
 
-4. **Styling & Composition**:
-   - Style the items cohesively as a complete, harmonious outfit
-   - Ensure products complement each other visually
-   - Natural draping and fit appropriate to each garment
-   - Show how the pieces work together in a real-world outfit
-   - Professional fashion styling that makes the products look appealing
+5. **Styling & Composition**:
+   - Style the items cohesively as a complete, harmonious women's outfit
+   - Ensure products complement each other visually for women's fashion
+   - Natural draping and fit appropriate to each women's garment
+   - Show how the pieces work together in a real-world women's outfit
+   - Professional fashion styling that makes the products look appealing for women
 
-5. **What to AVOID**:
+6. **What to AVOID**:
+   - Do NOT create men's fashion or unisex styling
    - Do NOT use artistic or editorial fashion photography styles
    - Do NOT use dramatic lighting, creative shadows, or unusual angles
    - Do NOT use busy, decorated, or outdoor backgrounds
    - Do NOT create avant-garde or conceptual designs
    - Do NOT add products that weren't listed
 
-The final image should look like a professional product catalog styling shot showing customers how these items can be worn together as a complete outfit."""
+The final image should look like a professional women's fashion product catalog styling shot showing customers how these items can be worn together as a complete women's outfit."""
 
         return prompt
 

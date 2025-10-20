@@ -56,29 +56,32 @@ class ImageGenerationService:
             print(f"\n[2] Generation config: temperature=0.6, max_output_tokens=8192")
 
             # Create prompt for Gemini 2.5 Flash Image generation with catalog-aligned specifications
-            full_prompt = f"""Generate a high-quality fashion product photograph based on this description:
+            full_prompt = f"""Generate a high-quality WOMEN'S fashion product photograph based on this description:
 
 {enhanced_prompt}
 
+CRITICAL REQUIREMENT: This MUST be WOMEN'S FASHION ONLY. The garment and styling must be exclusively for women.
+
 Photography specifications (match e-commerce catalog style):
-- Female model wearing the garment
+- Female model wearing the women's garment
 - Front-facing view, full body or 3/4 length composition
 - Clean minimalist background (white or soft grey)
 - Professional studio lighting with soft, even illumination
-- Contemporary fast-fashion photography style (H&M, Zara aesthetic)
+- Contemporary fast-fashion photography style (H&M, Zara aesthetic for women)
 - Scandinavian minimalist aesthetic
 - Natural, relaxed model pose
 - 9:16 portrait orientation (suitable for mobile and e-commerce)
-- Realistic, wearable, commercially viable design
+- Realistic, wearable, commercially viable women's design
 - Show garment clearly with accurate colors and details
 
 Avoid:
+- Men's fashion or unisex styling
 - Artistic or editorial fashion photography styles
 - Dramatic lighting or creative shadows
 - Busy or decorative backgrounds
 - Avant-garde or conceptual designs
 
-Focus on creating a specific, detailed design that captures the essence of the request while remaining visually consistent with modern fast-fashion catalogs."""
+Focus on creating a specific, detailed women's fashion design that captures the essence of the request while remaining visually consistent with modern women's fast-fashion catalogs."""
 
             print(f"\n[3] Sending request to Gemini...")
             print(f"    Prompt length: {len(full_prompt)} characters")
@@ -203,22 +206,24 @@ Focus on creating a specific, detailed design that captures the essence of the r
             print(f"[✓] Model initialized")
 
             # Create combined prompt for refinement with image editing instruction
-            combined_prompt = f"""Edit the fashion product photograph shown in the image.
+            combined_prompt = f"""Edit the WOMEN'S fashion product photograph shown in the image.
 
 Requested Changes: {refinement_prompt}
 
+CRITICAL: This MUST remain WOMEN'S FASHION. Do not change it to men's fashion.
+
 Apply these modifications while maintaining catalog photography standards:
-- Maintain the overall style and aesthetic
-- Keep contemporary fast-fashion photography style (H&M, Zara aesthetic)
+- Maintain the overall style and aesthetic for women's fashion
+- Keep contemporary women's fast-fashion photography style (H&M, Zara aesthetic for women)
 - Preserve clean minimalist background (white or soft grey)
 - Maintain professional studio lighting with soft, even illumination
-- Keep natural, relaxed model pose and front-facing composition
-- Show the refined garment clearly with accurate colors and details
+- Keep natural, relaxed female model pose and front-facing composition
+- Show the refined women's garment clearly with accurate colors and details
 - Ensure 9:16 portrait orientation
 - Keep elements that weren't mentioned in the changes
-- Maintain realistic, commercially viable design
+- Maintain realistic, commercially viable women's design
 
-Make the specific changes requested while preserving the e-commerce catalog quality and all other aspects of the original design."""
+Make the specific changes requested while preserving the e-commerce catalog quality and ensuring it remains women's fashion throughout."""
 
             from vertexai.generative_models import GenerationConfig, Image, Part
 

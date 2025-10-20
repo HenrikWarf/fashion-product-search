@@ -3,18 +3,11 @@ Category definitions and attribute templates for synthetic product generation.
 H&M-inspired women's fashion catalog.
 """
 
-# Category distribution (total: 300 products for gap filling)
+# Category distribution (Batch 2: Focused on Shoes, Accessories, Loungewear - 100 products)
 CATEGORY_DISTRIBUTION = {
-    "Tops": 45,
-    "Bottoms": 40,
-    "Dresses": 40,
-    "Outerwear": 30,
-    "Activewear": 40,  # Increased from 20
-    "Knitwear": 25,
-    "Shoes": 50,       # NEW
-    "Accessories": 30,  # NEW
-    "Swimwear": 15,    # NEW
-    "Loungewear": 15   # NEW
+    "Shoes": 50,
+    "Accessories": 35,
+    "Loungewear": 15
 }
 
 # Subcategories for each main category
